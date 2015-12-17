@@ -19,13 +19,14 @@ def prepare_image():
 
 def main():
     prepare_image()
-    image = cv2.imread('prepared.png', 0)
+    image = cv2.imread('dot.png', 0)
     rows, cols = image.shape
     # cv2.imshow('prepared', image)
 
     all_projected = {}
 
-    for i in xrange(0, 360, 5):
+    angles = range(0, 360, 1)
+    for i in angles:
         M = cv2.getRotationMatrix2D((cols/2, rows/2), i, 1)
         rotated = cv2.warpAffine(image, M, (cols, rows))
         projected = rotated.sum(axis=0)
@@ -33,12 +34,15 @@ def main():
         # cv2.imshow('rotated {}'.format(i), rotated)
         # plt.plot(projected)
 
-    print all_projected[5]
-    # plt.show()
+    # Build sinogram!
+    height = len(all_projected.keys())
+    width = len(all_projected[0])
+    sinogram = np.zeros((height, width))
+    for index, angle in enumerate(angles):
+        sinogram[index] = all_projected[angle]
 
-    print "done"
-    # cv2.waitKey(0)
-    # cv2.destroyAllWindows()
+    plt.imshow(sinogram, cmap='gray', interpolation='bicubic')
+    plt.show()
 
 if __name__ == '__main__':
     main()
