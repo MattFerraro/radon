@@ -47,11 +47,12 @@ def back_project(sinogram):
     rotation_angle = 360 / len(sinogram)
     width = height = len(sinogram[0])
     reconstructed = np.zeros((width, height))
-    M = cv2.getRotationMatrix2D((width/2, height/2), rotation_angle, 1)
     for index, projection in enumerate(sinogram):
-        small_projection = projection / height
-        for row in reconstructed:
-            row += small_projection
-        reconstructed = cv2.warpAffine(reconstructed, M, (width, height))
+        M = cv2.getRotationMatrix2D((width/2, height/2), -rotation_angle * index, 1)
+        scaled_projection = projection / height
+        back_projected = np.zeros((width, height))
+        for row in back_projected:
+            row += scaled_projection
+        reconstructed += cv2.warpAffine(back_projected, M, (width, height))
 
     return reconstructed
