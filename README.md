@@ -3,5 +3,6 @@ Attempts to do the radon and inverse radon transforms using a variety of techniq
 
 ## Usage
 ```
-python main.py --image dot.png
+python main.py
 ```
+You should see some cool plots of a cat
