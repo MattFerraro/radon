@@ -28,9 +28,11 @@ def main(img_name):
     # plt.show()
 
     plt.figure(1)
+    plt.subplot(121)
     plt.imshow(image, cmap='gray', interpolation='bicubic')
 
-    plt.figure(2)
+    # plt.figure(2)
+    plt.subplot(122)
     plt.imshow(reconstructed, cmap='gray', interpolation='bicubic')
     plt.show()
 
