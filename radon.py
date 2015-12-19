@@ -29,7 +29,7 @@ def radon_transform(image):
     Perform the radon transform on an image, returning the sinogram
     '''
     rows, cols = image.shape
-    angles = range(0, 360, 1)
+    angles = range(0, 180, 1)
     height = len(angles)
     width = cols
     sinogram = np.zeros((height, width))
@@ -40,15 +40,55 @@ def radon_transform(image):
     return sinogram
 
 
+def fft(signal):
+    # Forward transform: f(x) -> F(k)
+    fk = np.fft.rfft(signal)
+    npts = len(signal)
+    # Normalization -- the '2' here comes from the fact that we are
+    # neglecting the negative portion of the frequency space, since
+    # the FFT of a real function contains redundant information, so
+    # we are only dealing with 1/2 of the frequency space.
+    norm = 2.0/npts
+    fk = fk*norm
+    return fk
+
+
+def ifft(signal):
+    npts = (len(signal) - 1) * 2
+    # Normalization -- the '2' here comes from the fact that we are
+    # neglecting the negative portion of the frequency space, since
+    # the FFT of a real function contains redundant information, so
+    # we are only dealing with 1/2 of the frequency space.
+    norm = 2.0/npts
+
+    # Inverse transform: F(k) -> f(x) -- without the normalization
+    fkinv = np.fft.irfft(signal/norm)
+    return fkinv
+
+
+def low_pass(sinogram):
+    '''
+    Given a sinogram, return a low pass filtered copy of it
+    '''
+    output = np.zeros(sinogram.shape)
+    for index, row in enumerate(sinogram):
+        fk = fft(row)
+        ramp = np.arange(len(fk)) * 1.0  / len(fk)
+        low_passed = fk * ramp
+        output[index] = ifft(low_passed)
+    return output
+
+
 def back_project(sinogram):
     '''
     Given a sinogram, return the back-projection of it
     '''
-    rotation_angle = 360 / len(sinogram)
+    rotation_angle = 180 / len(sinogram)
     width = height = len(sinogram[0])
     reconstructed = np.zeros((width, height))
     for index, projection in enumerate(sinogram):
-        M = cv2.getRotationMatrix2D((width/2, height/2), -rotation_angle * index, 1)
+        M = cv2.getRotationMatrix2D(
+            (width/2, height/2), -rotation_angle * index, 1)
         scaled_projection = projection / height
         back_projected = np.zeros((width, height))
         for row in back_projected:
