@@ -2,30 +2,16 @@ import cv2
 import matplotlib.pyplot as plt
 import radon
 import argparse
-import pylab
-import test
+import numpy as np
 
 
-def main(img_name):
+def main(img_name, num_slices):
     radon.prepare_image('cat.jpg', 'prepared.png')
     image = cv2.imread(img_name, 0)
-    sinogram = radon.radon_transform(image)
-    low_passed = radon.low_pass(sinogram)
-    badly_reconstructed = radon.back_project(sinogram)
-    reconstructed = radon.back_project(low_passed)
-
-    # pylab.clf()
-    # pylab.subplot(221)
-    # pylab.imshow(sinogram, cmap='gray', interpolation='bicubic')
-    # pylab.subplot(222)
-    # pylab.imshow(badly_reconstructed, cmap='gray', interpolation='bicubic')
-
-
-    # pylab.subplot(223)
-    # pylab.imshow(low_passed, cmap='gray', interpolation='bicubic')
-    # pylab.subplot(224)
-    # pylab.imshow(reconstructed, cmap='gray', interpolation='bicubic')
-    # plt.show()
+    sinogram = radon.radon_transform(image, num_slices)
+    high_passed = radon.high_pass(sinogram)
+    # badly_reconstructed = radon.back_project(sinogram)
+    reconstructed = radon.back_project(high_passed)
 
     plt.figure(1)
     plt.subplot(121)
@@ -36,8 +22,12 @@ def main(img_name):
     plt.imshow(reconstructed, cmap='gray', interpolation='bicubic')
     plt.show()
 
+    print "min max", np.amin(image), np.amax(image)
+    print "min max", np.amin(reconstructed), np.amax(reconstructed)
+
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('--image', default='prepared.png')
+    parser.add_argument('--image', '-i', default='prepared.png')
+    parser.add_argument('--num-slices', '-n', default=36, type=int)
     args = parser.parse_args()
-    main(args.image)
+    main(args.image, args.num_slices)

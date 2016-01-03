@@ -24,12 +24,16 @@ def prepare_image(input_name, output_name):
     cv2.imwrite(output_name, cropped)
 
 
-def radon_transform(image):
+def radon_transform(image, num_slices):
     '''
     Perform the radon transform on an image, returning the sinogram
+    Inputs:
+        image: a numpy ndarray, like the output of cv2.imread(img_name, 0)
+        num_slices: the number of projections to return, spaced over 180 deg
     '''
     rows, cols = image.shape
-    angles = range(0, 180, 1)
+    # no need to include the 180 degree endpoint, it's just redundant info
+    angles = np.linspace(0, 180, num_slices, endpoint=False)
     height = len(angles)
     width = cols
     sinogram = np.zeros((height, width))
@@ -66,16 +70,16 @@ def ifft(signal):
     return fkinv
 
 
-def low_pass(sinogram):
+def high_pass(sinogram):
     '''
-    Given a sinogram, return a low pass filtered copy of it
+    Given a sinogram, return a high-pass-filtered copy of it
     '''
     output = np.zeros(sinogram.shape)
     for index, row in enumerate(sinogram):
         fk = fft(row)
-        ramp = np.arange(len(fk)) * 1.0  / len(fk)
-        low_passed = fk * ramp
-        output[index] = ifft(low_passed)
+        ramp = np.arange(len(fk)) * 1.0 / len(fk)
+        high_passed = fk * ramp
+        output[index] = ifft(high_passed)
     return output
 
 
@@ -83,12 +87,13 @@ def back_project(sinogram):
     '''
     Given a sinogram, return the back-projection of it
     '''
-    rotation_angle = 180 / len(sinogram)
+    num_slices = len(sinogram)
+    angles = np.linspace(0, 180, num_slices, endpoint=False)
     width = height = len(sinogram[0])
     reconstructed = np.zeros((width, height))
-    for index, projection in enumerate(sinogram):
+    for angle, projection in zip(angles, sinogram):
         M = cv2.getRotationMatrix2D(
-            (width/2, height/2), -rotation_angle * index, 1)
+            (width/2, height/2), -angle, 1)
         scaled_projection = projection / height
         back_projected = np.zeros((width, height))
         for row in back_projected:
